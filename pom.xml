@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <!-- Spring Boot 依赖版本管理与插件配置基础 POM. https://spring.io/projects/spring-boot -->
+    <!-- Spring Boot 依赖版本管理与插件配置基础 POM. CVE-2026-42198,CVE-2026-41044,CVE-2026-41043,CVE-2026-40466,CVE-2022-46337. https://spring.io/projects/spring-boot -->
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
@@ -16,28 +16,22 @@
     <artifactId>hy-common</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
-    <description>侯余通用依赖版本管理</description>
+    <description>厚玉通用依赖版本管理</description>
 
     <properties>
         <revision>1.0.0-SNAPSHOT</revision>
         <java.version>21</java.version>
-        <!-- Spring Cloud Alibaba 微服务组件依赖版本 BOM. https://sca.aliyun.com/ -->
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
-        <!-- JetCache 缓存框架版本. https://github.com/alibaba/jetcache -->
         <jetcache.version>2.7.9-SNAPSHOT</jetcache.version>
-        <!-- Java 样板代码生成工具版本. https://projectlombok.org/ -->
         <lombok.version>1.18.46</lombok.version>
-        <!-- Bean 映射框架版本. https://mapstruct.org/ -->
         <mapstruct.version>1.7.0.Beta1</mapstruct.version>
-        <!-- Maven POM 展平插件版本. https://www.mojohaus.org/flatten-maven-plugin/ -->
         <flatten-maven-plugin.version>1.7.3</flatten-maven-plugin.version>
-        <!-- 单元测试覆盖率统计插件版本. https://www.jacoco.org/jacoco/trunk/doc/maven.html -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
-            <!-- Spring Cloud Alibaba 微服务组件依赖版本 BOM，集成 Nacos/Sentinel/Seata 等. https://sca.aliyun.com/ -->
+            <!-- Spring Cloud Alibaba 微服务组件依赖版本 BOM，集成 Nacos/Sentinel/Seata 等. CVE-2026-34480, CVE-2026-34478, CVE-2026-34477, CVE-2025-68161. https://sca.aliyun.com/ -->
             <dependency>
                 <groupId>com.alibaba.cloud</groupId>
                 <artifactId>spring-cloud-alibaba-dependencies</artifactId>
@@ -69,7 +63,6 @@
                 <artifactId>mapstruct</artifactId>
                 <version>${mapstruct.version}</version>
             </dependency>
-            <!-- Bean 映射注解处理器，配合 mapstruct 在编译期生成映射实现. https://mapstruct.org/ -->
             <dependency>
                 <groupId>org.mapstruct</groupId>
                 <artifactId>mapstruct-processor</artifactId>
@@ -82,7 +75,7 @@
     <build>
         <pluginManagement>
             <plugins>
-                <!-- 展平 Maven POM 文件，解决多模块 ${revision} 版本占位符发布问题. https://www.mojohaus.org/flatten-maven-plugin/ -->
+                <!-- 展平 Maven POM 文件，解决多模块 ${revision} 版本占位符发布问题. CVE-2026-24400,CVE-2025-67030. https://www.mojohaus.org/flatten-maven-plugin/ -->
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>flatten-maven-plugin</artifactId>
@@ -124,19 +117,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <repositories>
-        <!-- JetCache 2.7.9-SNAPSHOT 构件来源仓库 -->
-        <repository>
-            <id>sonatype-snapshots</id>
-            <name>Sonatype OSS Snapshots</name>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
 </project>
