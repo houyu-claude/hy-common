@@ -16,4 +16,9 @@ public class PhoneDesensitizer implements Desensitizer {
         }
         return PHONE_PATTERN.matcher(input).replaceAll("$1****$2");
     }
+
+    @Override
+    public boolean support(DesensitizerType type) {
+        return type == DesensitizerType.PHONE;
+    }
 }

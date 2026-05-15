@@ -16,4 +16,9 @@ public class EmailDesensitizer implements Desensitizer {
         }
         return EMAIL_PATTERN.matcher(input).replaceAll("$1**@$2");
     }
+
+    @Override
+    public boolean support(DesensitizerType type) {
+        return type == DesensitizerType.EMAIL;
+    }
 }

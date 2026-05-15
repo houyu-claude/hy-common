@@ -16,4 +16,9 @@ public class PasswordDesensitizer implements Desensitizer {
         }
         return PASSWORD_PATTERN.matcher(input).replaceAll("$1=******");
     }
+
+    @Override
+    public boolean support(DesensitizerType type) {
+        return type == DesensitizerType.PASSWORD;
+    }
 }

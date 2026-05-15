@@ -53,6 +53,9 @@
 
         <!-- Redisson. 分布式锁，用于机器码注册. https://github.com/redisson/redisson -->
         <redisson.version>3.23.5</redisson.version>
+
+        <!-- Transmittable Thread Local. 支持线程池间上下文传递. https://github.com/alibaba/transmittable-thread-local -->
+        <transmittable-thread-local.version>2.14.5</transmittable-thread-local.version>
     </properties>
 
     <dependencyManagement>

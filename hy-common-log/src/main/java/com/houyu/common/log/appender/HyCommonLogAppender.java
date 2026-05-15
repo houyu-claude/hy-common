@@ -2,6 +2,8 @@ package com.houyu.common.log.appender;
 
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.AppenderBase;
+import com.houyu.common.log.converter.LogEventConverter;
+import com.houyu.common.log.output.LogOutputManager;
 import com.lmax.disruptor.BlockingWaitStrategy;
 import com.lmax.disruptor.InsufficientCapacityException;
 import com.lmax.disruptor.RingBuffer;
@@ -18,9 +20,13 @@ public class HyCommonLogAppender extends AppenderBase<ILoggingEvent> {
     private RingBuffer<LogEventHolder> ringBuffer;
     private final int bufferSize;
     private final AtomicLong droppedCount = new AtomicLong(0);
+    private final LogEventConverter converter;
+    private final LogOutputManager outputManager;
 
-    public HyCommonLogAppender(int bufferSize) {
+    public HyCommonLogAppender(int bufferSize, LogEventConverter converter, LogOutputManager outputManager) {
         this.bufferSize = bufferSize;
+        this.converter = converter;
+        this.outputManager = outputManager;
     }
 
     @Override
@@ -37,16 +43,10 @@ public class HyCommonLogAppender extends AppenderBase<ILoggingEvent> {
                 ProducerType.MULTI,
                 new BlockingWaitStrategy()
         );
-        disruptor.handleEventsWith(new LogEventHandler());
+        disruptor.handleEventsWith(new LogEventHandler(converter, outputManager));
         disruptor.start();
         ringBuffer = disruptor.getRingBuffer();
         super.start();
-    }
-
-    public void setEventHandler(LogEventHandler eventHandler) {
-        if (disruptor != null) {
-            disruptor.handleEventsWith(eventHandler);
-        }
     }
 
     @Override

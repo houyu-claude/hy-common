@@ -39,6 +39,7 @@ public class LogProperties {
         private String fileName = "hy-common.log";
         private int maxFileSize = 100;
         private int maxHistory = 30;
+        private int retentionDays = 30;
         private boolean dbEnabled = false;
         private int dbBatchSize = 100;
         private long dbFlushIntervalMs = 5000;

@@ -1,11 +1,13 @@
 package com.houyu.common.log.trace;
 
+import com.alibaba.ttl.TransmittableThreadLocal;
+
 public class TraceContextHolder {
 
-    private static final ThreadLocal<String> traceIdHolder = new ThreadLocal<>();
-    private static final ThreadLocal<String> spanIdHolder = new ThreadLocal<>();
-    private static final ThreadLocal<String> parentSpanIdHolder = new ThreadLocal<>();
-    private static final ThreadLocal<String> traceFlagHolder = new ThreadLocal<>();
+    private static final TransmittableThreadLocal<String> traceIdHolder = new TransmittableThreadLocal<>();
+    private static final TransmittableThreadLocal<String> spanIdHolder = new TransmittableThreadLocal<>();
+    private static final TransmittableThreadLocal<String> parentSpanIdHolder = new TransmittableThreadLocal<>();
+    private static final TransmittableThreadLocal<String> traceFlagHolder = new TransmittableThreadLocal<>();
 
     public static String getTraceId() {
         return traceIdHolder.get();

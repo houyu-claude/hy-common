@@ -16,4 +16,9 @@ public class IdCardDesensitizer implements Desensitizer {
         }
         return ID_CARD_PATTERN.matcher(input).replaceAll("$1**********$2");
     }
+
+    @Override
+    public boolean support(DesensitizerType type) {
+        return type == DesensitizerType.ID_CARD;
+    }
 }

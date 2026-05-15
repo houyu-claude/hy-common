@@ -1,5 +1,6 @@
 package com.houyu.common.log.output;
 
+import com.houyu.common.log.config.LogProperties;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
@@ -16,9 +17,11 @@ public class LogTableRouter {
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyyMMdd");
     private final Set<String> existingTables = Collections.newSetFromMap(new ConcurrentHashMap<>());
     private final JdbcTemplate jdbcTemplate;
+    private final LogProperties logProperties;
 
-    public LogTableRouter(JdbcTemplate jdbcTemplate) {
+    public LogTableRouter(JdbcTemplate jdbcTemplate, LogProperties logProperties) {
         this.jdbcTemplate = jdbcTemplate;
+        this.logProperties = logProperties;
     }
 
     public String resolveTableName(String baseTable, String traceId) {
@@ -49,7 +52,8 @@ public class LogTableRouter {
 
     @Scheduled(cron = "0 0 2 * * *")
     public void cleanOldTables() {
-        LocalDate cutoff = LocalDate.now().minusDays(30);
+        int retentionDays = logProperties.getOutput().getRetentionDays();
+        LocalDate cutoff = LocalDate.now().minusDays(retentionDays);
         String cutoffStr = "20" + cutoff.format(DateTimeFormatter.ofPattern("yyMMdd"));
         jdbcTemplate.queryForList(
                 "SELECT table_name FROM information_schema.tables " +

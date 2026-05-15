@@ -16,4 +16,9 @@ public class BankCardDesensitizer implements Desensitizer {
         }
         return BANK_CARD_PATTERN.matcher(input).replaceAll("$1**********$2");
     }
+
+    @Override
+    public boolean support(DesensitizerType type) {
+        return type == DesensitizerType.BANK_CARD;
+    }
 }
