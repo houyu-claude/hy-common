@@ -15,9 +15,13 @@
     <groupId>com.houyu</groupId>
     <artifactId>hy-common</artifactId>
     <version>1.0.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <packaging>pom</packaging>
     <name>hy-common</name>
     <description>HouYu Common Module - 公共模块，提供通用工具类、常量定义、异常处理等基础功能</description>
+
+    <modules>
+        <module>hy-common-log</module>
+    </modules>
 
     <properties>
         <java.version>21</java.version>
