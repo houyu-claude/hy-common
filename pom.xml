@@ -47,6 +47,12 @@
 
         <!-- JaCoCo Maven Plugin. 统计单元测试覆盖率. https://www.jacoco.org/jacoco/trunk/doc/maven.html -->
         <jacoco-maven-plugin.version>0.8.14</jacoco-maven-plugin.version>
+
+        <!-- Disruptor. 高性能队列，用于异步日志处理. https://lmax-exchange.github.io/disruptor/ -->
+        <disruptor.version>3.4.4</disruptor.version>
+
+        <!-- Redisson. 分布式锁，用于机器码注册. https://github.com/redisson/redisson -->
+        <redisson.version>3.23.5</redisson.version>
     </properties>
 
     <dependencyManagement>
