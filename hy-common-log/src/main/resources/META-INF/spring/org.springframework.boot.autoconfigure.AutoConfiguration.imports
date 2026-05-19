@@ -1,0 +1,2 @@
+com.houyu.common.log.config.LogAutoConfiguration
+com.houyu.common.log.config.RedissonConfig
