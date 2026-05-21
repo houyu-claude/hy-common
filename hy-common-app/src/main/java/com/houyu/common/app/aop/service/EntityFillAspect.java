@@ -7,6 +7,8 @@ import com.houyu.common.app.enums.OpType;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -14,9 +16,10 @@ import java.util.Collection;
 
 @Aspect
 @Component
+@Order(1)
 public class EntityFillAspect {
 
-    @Before("execution(* com.houyu.*.service..*.save*(..))")
+    @Before("execution(* com.houyu.*.service..*.save*(..)) && !execution(* com.houyu.*.service..*.saveOrUpdate*(..))")
     public void fillForSave(JoinPoint joinPoint) {
         fillEntity(joinPoint, OpType.INSERT);
     }

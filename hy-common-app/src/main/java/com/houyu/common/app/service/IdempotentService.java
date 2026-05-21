@@ -7,9 +7,7 @@ import com.alicp.jetcache.support.QuickConfig;
 import com.houyu.common.app.config.AppProperties;
 import com.houyu.common.app.enums.IdempotentStatus;
 import jakarta.annotation.PostConstruct;
-import org.springframework.stereotype.Service;
 
-@Service
 public class IdempotentService {
 
     private Cache<String, IdempotentStatus> processingCache;
@@ -51,6 +49,11 @@ public class IdempotentService {
             return processing;
         }
         return successCache.get(key);
+    }
+
+    public boolean tryStoreProcessing(String key) {
+        IdempotentStatus previous = processingCache.putIfAbsent(key, IdempotentStatus.PROCESSING);
+        return previous == null;
     }
 
     public void store(String key, IdempotentStatus status) {

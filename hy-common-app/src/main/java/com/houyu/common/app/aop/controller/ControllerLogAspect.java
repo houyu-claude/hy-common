@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -21,6 +22,7 @@ import java.util.Map;
 
 @Aspect
 @Component
+@Order(30)
 public class ControllerLogAspect {
 
     private final LogOutputManager logOutputManager;

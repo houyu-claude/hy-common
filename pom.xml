@@ -65,6 +65,12 @@
         <!-- JWT. JSON Web Token 库. https://github.com/jwtk/jjwt -->
         <jjwt.version>0.12.5</jjwt.version>
 
+        <!-- knife4j. API文档工具. https://doc.xiaominfo.com -->
+        <knife4j.version>4.5.0</knife4j.version>
+
+        <!-- JSqlParser. SQL解析库，用于安全的SQL构建. https://github.com/JSQLParser/JSqlParser -->
+        <jsqlparser.version>4.9</jsqlparser.version>
+
         <hy-common-log.version>${project.version}</hy-common-log.version>
     </properties>
 

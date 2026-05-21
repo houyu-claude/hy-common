@@ -7,7 +7,96 @@ HouYu Common Module - 公共模块，提供通用工具类、常量定义、异�
 ```
 hy-common/
 ├── hy-common-log/     # 统一日志管理模块
+├── hy-common-app/     # 后端应用公共模块（AOP切面、拦截器、公共Entity）
 └── pom.xml            # 父 POM，统一管理依赖版本
+```
+
+---
+
+## hy-common-app
+
+后端应用公共模块，为所有后端app模块提供统一的AOP切面、拦截器、公共Entity等基础设施能力。
+
+### 技术栈
+
+| 组件 | 版本 | 说明 |
+|------|------|------|
+| Java | 21 | 编程语言 |
+| Spring Boot | 4.1.0-RC1 | 应用框架 |
+| Spring AOP | 内置 | 切面编程 |
+| MyBatis Plus | 3.5.6 | ORM框架 |
+| JetCache | 2.7.9-SNAPSHOT | 多级缓存 |
+| Transmittable Thread Local | 2.14.5 | 线程上下文传递 |
+| knife4j | 4.5.0 | API文档工具 |
+| JSqlParser | 4.9 | SQL解析库 |
+
+### 核心功能
+
+| 功能 | 说明 |
+|------|------|
+| TraceFilter | 验证X-Trace-Id，缺失返回403 |
+| RequestFilter | 请求预处理，包装request支持多次读取body |
+| ControllerLogAspect | Controller层日志记录（warn/error级别） |
+| IdempotentAspect | 接口幂等处理（三态管理） |
+| AuthAspect | 权限验证（功能权限、数据权限） |
+| AuditAspect | 审计日志记录 |
+| ManagerLogAspect | Manager层日志记录（info/error级别） |
+| ServiceLogAspect | Service层日志记录（debug/error级别） |
+| EntityFillAspect | Entity字段自动赋值 |
+| JournalAspect | 流水表记录 |
+| TableShardInterceptor | MyBatis分表拦截器 |
+| DataPermissionInterceptor | 数据权限SQL改写 |
+| PageInterceptor | 分页大小限制（最大5000） |
+| BaseEntity | 公共实体基类（含审计字段） |
+| ShardEntity | 分表实体基类 |
+
+### 快速开始
+
+#### 1. 添加依赖
+
+```xml
+<dependency>
+    <groupId>com.houyu</groupId>
+    <artifactId>hy-common-app</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+</dependency>
+```
+
+#### 2. 配置（application.yml）
+
+```yaml
+hy:
+  app:
+    enabled: true
+    idempotent:
+      processing-expire-seconds: 30
+      success-expire-seconds: 300
+    page:
+      max-size: 5000
+    security:
+      enabled: true
+```
+
+### 目录结构
+
+```
+hy-common-app/
+├── src/main/java/com/houyu/common/app/
+│   ├── config/          # 配置类
+│   ├── interceptor/     # Web拦截器
+│   ├── aop/controller/  # Controller层AOP
+│   ├── aop/manager/     # Manager层AOP
+│   ├── aop/service/     # Service层AOP
+│   ├── mybatis/         # MyBatis拦截器
+│   ├── entity/          # 实体类
+│   ├── context/         # 上下文管理器
+│   ├── annotation/      # 自定义注解
+│   ├── enums/           # 枚举类
+│   ├── service/         # 服务类
+│   └── util/            # 工具类
+└── src/main/resources/
+    └── META-INF/spring/
+        └── org.springframework.boot.autoconfigure.AutoConfiguration.imports
 ```
 
 ---

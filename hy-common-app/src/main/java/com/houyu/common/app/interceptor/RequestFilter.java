@@ -28,18 +28,22 @@ public class RequestFilter implements Filter {
 
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(httpRequest);
 
-        RequestContextHolder.setRequestId(httpRequest.getHeader(REQUEST_ID_HEADER));
-        RequestContextHolder.setUserId(httpRequest.getHeader(USER_ID_HEADER));
-        RequestContextHolder.setUserName(httpRequest.getHeader(USER_NAME_HEADER));
-        RequestContextHolder.setRetryFlag(Boolean.parseBoolean(
-                httpRequest.getHeader(RETRY_FLAG_HEADER)));
+        try {
+            RequestContextHolder.setRequestId(httpRequest.getHeader(REQUEST_ID_HEADER));
+            RequestContextHolder.setUserId(httpRequest.getHeader(USER_ID_HEADER));
+            RequestContextHolder.setUserName(httpRequest.getHeader(USER_NAME_HEADER));
+            RequestContextHolder.setRetryFlag(Boolean.parseBoolean(
+                    httpRequest.getHeader(RETRY_FLAG_HEADER)));
 
-        Map<String, String> headers = new HashMap<>();
-        httpRequest.getHeaderNames().asIterator().forEachRemaining(name -> {
-            headers.put(name, httpRequest.getHeader(name));
-        });
-        RequestContextHolder.setRequestHeaders(headers);
+            Map<String, String> headers = new HashMap<>();
+            httpRequest.getHeaderNames().asIterator().forEachRemaining(name -> {
+                headers.put(name, httpRequest.getHeader(name));
+            });
+            RequestContextHolder.setRequestHeaders(headers);
 
-        chain.doFilter(wrappedRequest, response);
+            chain.doFilter(wrappedRequest, response);
+        } finally {
+            RequestContextHolder.clear();
+        }
     }
 }

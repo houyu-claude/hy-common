@@ -8,11 +8,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
 @Aspect
 @Component
+@Order(10)
 public class IdempotentAspect {
 
     private static final String REQUEST_ID_HEADER = "X-Request-Id";
@@ -33,6 +36,7 @@ public class IdempotentAspect {
         }
 
         String key = buildIdempotentKey(requestId, request.getMethod(), request.getRequestURI());
+
         IdempotentStatus status = idempotentService.getStatus(key);
 
         if (status == IdempotentStatus.PROCESSING) {
@@ -43,7 +47,10 @@ public class IdempotentAspect {
             throw new IllegalStateException("Duplicate request detected");
         }
 
-        idempotentService.store(key, IdempotentStatus.PROCESSING);
+        boolean acquired = idempotentService.tryStoreProcessing(key);
+        if (!acquired) {
+            throw new IllegalStateException("Request is processing by another thread");
+        }
 
         try {
             Object result = joinPoint.proceed();
