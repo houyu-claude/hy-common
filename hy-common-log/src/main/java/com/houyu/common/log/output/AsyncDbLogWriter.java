@@ -2,6 +2,7 @@ package com.houyu.common.log.output;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.houyu.common.log.config.LogProperties;
 import com.houyu.common.log.model.HyLogEvent;
 import io.micrometer.core.instrument.Metrics;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -26,22 +27,21 @@ public class AsyncDbLogWriter {
     private final ScheduledExecutorService scheduler;
     private final ObjectMapper objectMapper;
 
-    public AsyncDbLogWriter(JdbcTemplate jdbcTemplate, LogTableRouter tableRouter) {
-        this(jdbcTemplate, tableRouter, 100, 5000);
-    }
-
-    public AsyncDbLogWriter(JdbcTemplate jdbcTemplate, LogTableRouter tableRouter,
-                            int batchSize, long flushIntervalMs) {
+    public AsyncDbLogWriter(JdbcTemplate jdbcTemplate, LogTableRouter tableRouter, 
+                           LogProperties logProperties) {
         this.jdbcTemplate = jdbcTemplate;
         this.tableRouter = tableRouter;
-        this.batchSize = batchSize;
+        this.batchSize = logProperties.getDb().getBatchSize();
         this.objectMapper = new ObjectMapper();
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "log-db-writer");
             t.setDaemon(true);
             return t;
         });
-        scheduler.scheduleAtFixedRate(this::flush, flushIntervalMs, flushIntervalMs, TimeUnit.MILLISECONDS);
+        scheduler.scheduleAtFixedRate(this::flush, 
+            logProperties.getDb().getFlushIntervalMs(), 
+            logProperties.getDb().getFlushIntervalMs(), 
+            TimeUnit.MILLISECONDS);
     }
 
     public void write(HyLogEvent event) {

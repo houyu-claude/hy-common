@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
-@ConditionalOnProperty(prefix = "hy.log.output", name = "db-enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "hy.log.db", name = "enabled", havingValue = "true")
 public class DbLogOutput implements LogOutput {
 
     private final AsyncDbLogWriter asyncDbLogWriter;

@@ -21,6 +21,7 @@
 
     <modules>
         <module>hy-common-log</module>
+        <module>hy-common-app</module>
     </modules>
 
     <properties>

@@ -33,6 +33,8 @@ CREATE TABLE sys_log (
 CREATE INDEX idx_sys_log_trace_id ON sys_log(trace_id);
 CREATE INDEX idx_sys_log_log_timestamp ON sys_log(log_timestamp);
 CREATE INDEX idx_sys_log_service_name ON sys_log(service_name);
+CREATE INDEX idx_sys_log_user_id ON sys_log(user_id);
+CREATE INDEX idx_sys_log_log_level ON sys_log(log_level);
 
 CREATE TABLE sys_log_http_request (
     id                  BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,

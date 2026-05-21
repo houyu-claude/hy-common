@@ -1,0 +1,96 @@
+package com.houyu.common.app.aop.controller;
+
+import com.houyu.common.app.context.RequestContextHolder;
+import com.houyu.common.log.model.HyLogEvent;
+import com.houyu.common.log.output.LogOutputManager;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@ControllerAdvice
+public class GlobalExceptionHandler {
+
+    private final LogOutputManager logOutputManager;
+
+    public GlobalExceptionHandler(LogOutputManager logOutputManager) {
+        this.logOutputManager = logOutputManager;
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationException(
+            MethodArgumentNotValidException ex) {
+
+        BindingResult bindingResult = ex.getBindingResult();
+        List<String> errors = bindingResult.getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.toList());
+
+        logException(ex, HttpStatus.BAD_REQUEST.value());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("code", "VALIDATION_ERROR");
+        response.put("message", "参数校验失败");
+        response.put("errors", errors);
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("traceId", RequestContextHolder.getTraceId());
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalStateException(
+            IllegalStateException ex) {
+
+        logException(ex, HttpStatus.CONFLICT.value());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("code", "STATE_ERROR");
+        response.put("message", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("traceId", RequestContextHolder.getTraceId());
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGlobalException(Exception ex) {
+
+        logException(ex, HttpStatus.INTERNAL_SERVER_ERROR.value());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("code", "INTERNAL_ERROR");
+        response.put("message", "系统内部错误，请联系管理员");
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("traceId", RequestContextHolder.getTraceId());
+
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+
+    private void logException(Exception ex, int statusCode) {
+        HyLogEvent logEvent = new HyLogEvent();
+        logEvent.setTraceId(RequestContextHolder.getTraceId());
+        logEvent.setTimestamp(LocalDateTime.now());
+        logEvent.setLevel(com.houyu.common.log.model.LogLevel.ERROR);
+        logEvent.setMessage("Global exception: " + ex.getClass().getSimpleName());
+        logEvent.setServiceName("hy-common-app");
+        logEvent.setMethodName("GlobalExceptionHandler");
+        logEvent.setExceptionClassName(ex.getClass().getName());
+        logEvent.setExceptionMessage(ex.getMessage());
+        logEvent.setSuccess(false);
+
+        logOutputManager.output(logEvent);
+    }
+}

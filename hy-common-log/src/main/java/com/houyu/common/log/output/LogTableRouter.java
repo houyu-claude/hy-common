@@ -52,7 +52,7 @@ public class LogTableRouter {
 
     @Scheduled(cron = "0 0 2 * * *")
     public void cleanOldTables() {
-        int retentionDays = logProperties.getOutput().getRetentionDays();
+        int retentionDays = logProperties.getDb().getRetentionDays();
         LocalDate cutoff = LocalDate.now().minusDays(retentionDays);
         String cutoffStr = "20" + cutoff.format(DateTimeFormatter.ofPattern("yyMMdd"));
         jdbcTemplate.queryForList(

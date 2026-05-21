@@ -18,4 +18,5 @@ public class HttpRequestInfo {
     private String userAgent;
     private String referer;
     private String protocol;
+    private String clientIp;
 }

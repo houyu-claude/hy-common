@@ -5,6 +5,7 @@ import com.houyu.common.log.formatter.LogFormatter;
 import com.houyu.common.log.model.HyLogEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import jakarta.annotation.PreDestroy;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.*;
 
 @Component
+@ConditionalOnProperty(prefix = "hy.log.file", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class FileLogOutput implements LogOutput {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd");
@@ -33,8 +35,8 @@ public class FileLogOutput implements LogOutput {
 
     public FileLogOutput(LogFormatter formatter, LogProperties logProperties) {
         this.formatter = formatter;
-        this.logPath = logProperties.getOutput().getFilePath();
-        this.fileName = logProperties.getOutput().getFileName();
+        this.logPath = logProperties.getFile().getPath();
+        this.fileName = logProperties.getFile().getName();
         this.queue = new LinkedBlockingQueue<>(65536);
         this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
             Thread t = new Thread(r, "log-file-writer");
