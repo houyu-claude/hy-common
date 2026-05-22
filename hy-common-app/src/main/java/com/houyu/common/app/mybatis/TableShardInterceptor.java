@@ -44,7 +44,7 @@ public class TableShardInterceptor implements InnerInterceptor {
         }
     }
 
-    private String replaceTableName(String sql, String srcTable, String destTable) {
+    private String replaceTableName(String sql, String srcTable, String destTable) throws SQLException {
         try {
             Statement statement = CCJSqlParserUtil.parse(sql);
 
@@ -70,7 +70,7 @@ public class TableShardInterceptor implements InnerInterceptor {
             return statement.toString();
         } catch (JSQLParserException e) {
             logger.error("Failed to parse SQL for table sharding: {}", e.getMessage());
-            return null;
+            throw new SQLException("Table sharding SQL parsing failed: " + sql, e);
         }
     }
 

@@ -8,6 +8,7 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.reflect.MethodSignature;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -19,12 +20,15 @@ import java.util.List;
 public class ServiceLogAspect {
 
     private final LogOutputManager logOutputManager;
+    private final String serviceName;
 
-    public ServiceLogAspect(LogOutputManager logOutputManager) {
+    public ServiceLogAspect(LogOutputManager logOutputManager,
+                           @Value("${spring.application.name:hy-common-app}") String serviceName) {
         this.logOutputManager = logOutputManager;
+        this.serviceName = serviceName;
     }
 
-    @Around("execution(* com.houyu.*.service..*.*(..))")
+    @Around("@within(com.houyu.common.app.annotation.EnableAppLogging) && execution(* *..service..*.*(..))")
     public Object logService(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         String traceId = RequestContextHolder.getTraceId();
@@ -55,7 +59,7 @@ public class ServiceLogAspect {
             logEvent.setMessage(success ? "Service method success" : "Service method failed");
             logEvent.setSuccess(success);
             logEvent.setExecutionTime(executionTime);
-            logEvent.setServiceName("hy-common-app");
+            logEvent.setServiceName(serviceName);
             logEvent.setMethodName(methodName);
             logEvent.setClassName(className);
 

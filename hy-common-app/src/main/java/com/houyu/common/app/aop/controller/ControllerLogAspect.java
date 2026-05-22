@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -34,12 +35,15 @@ public class ControllerLogAspect {
     ));
 
     private final LogOutputManager logOutputManager;
+    private final String serviceName;
 
-    public ControllerLogAspect(LogOutputManager logOutputManager) {
+    public ControllerLogAspect(LogOutputManager logOutputManager, 
+                              @Value("${spring.application.name:hy-common-app}") String serviceName) {
         this.logOutputManager = logOutputManager;
+        this.serviceName = serviceName;
     }
 
-    @Around("execution(* com.houyu.*.controller..*.*(..))")
+    @Around("@within(com.houyu.common.app.annotation.EnableAppLogging) && execution(* *..controller..*.*(..))")
     public Object logController(ProceedingJoinPoint joinPoint) throws Throwable {
         long startTime = System.currentTimeMillis();
         ServletRequestAttributes attributes = (ServletRequestAttributes) org.springframework.web.context.request.RequestContextHolder.getRequestAttributes();
@@ -81,12 +85,12 @@ public class ControllerLogAspect {
             logEvent.setTraceId(traceId);
             logEvent.setTimestamp(LocalDateTime.now());
             logEvent.setLevel(success ?
-                    com.houyu.common.log.model.LogLevel.WARN :
+                    com.houyu.common.log.model.LogLevel.INFO :
                     com.houyu.common.log.model.LogLevel.ERROR);
             logEvent.setMessage(success ? "Controller request success" : "Controller request failed");
             logEvent.setSuccess(success);
             logEvent.setExecutionTime(executionTime);
-            logEvent.setServiceName("hy-common-app");
+            logEvent.setServiceName(serviceName);
             logEvent.setMethodName(joinPoint.getSignature().getName());
             logEvent.setClassName(joinPoint.getTarget().getClass().getName());
 

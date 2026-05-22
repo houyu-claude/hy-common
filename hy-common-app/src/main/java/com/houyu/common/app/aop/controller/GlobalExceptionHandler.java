@@ -1,6 +1,7 @@
 package com.houyu.common.app.aop.controller;
 
 import com.houyu.common.app.context.RequestContextHolder;
+import com.houyu.common.app.exception.AccessDeniedException;
 import com.houyu.common.log.model.HyLogEvent;
 import com.houyu.common.log.output.LogOutputManager;
 import org.springframework.http.HttpStatus;
@@ -8,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
@@ -23,9 +25,12 @@ public class GlobalExceptionHandler {
     private static final String STATE_ERROR_MESSAGE = "操作冲突，请稍后重试";
 
     private final LogOutputManager logOutputManager;
+    private final String serviceName;
 
-    public GlobalExceptionHandler(LogOutputManager logOutputManager) {
+    public GlobalExceptionHandler(LogOutputManager logOutputManager,
+                                 @Value("${spring.application.name:hy-common-app}") String serviceName) {
         this.logOutputManager = logOutputManager;
+        this.serviceName = serviceName;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -82,6 +87,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+
+        logException(ex, HttpStatus.FORBIDDEN.value());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("code", ex.getCode());
+        response.put("message", "权限不足，无法访问");
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("traceId", RequestContextHolder.getTraceId());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
     @ExceptionHandler(SecurityException.class)
     public ResponseEntity<Map<String, Object>> handleSecurityException(SecurityException ex) {
 
@@ -118,7 +138,7 @@ public class GlobalExceptionHandler {
         logEvent.setTimestamp(LocalDateTime.now());
         logEvent.setLevel(com.houyu.common.log.model.LogLevel.ERROR);
         logEvent.setMessage("Global exception: " + ex.getClass().getSimpleName());
-        logEvent.setServiceName("hy-common-app");
+        logEvent.setServiceName(serviceName);
         logEvent.setMethodName("GlobalExceptionHandler");
         logEvent.setExceptionClassName(ex.getClass().getName());
         logEvent.setExceptionMessage(ex.getMessage());

@@ -7,6 +7,7 @@ import com.houyu.common.app.mybatis.DataPermissionInterceptor;
 import com.houyu.common.app.mybatis.PageInterceptor;
 import com.houyu.common.app.mybatis.TableShardInterceptor;
 import com.houyu.common.app.service.PermissionService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -22,6 +23,7 @@ public class MyBatisPlusConfig {
     }
 
     @Bean
+    @ConditionalOnMissingBean(MybatisPlusInterceptor.class)
     public MybatisPlusInterceptor mybatisPlusInterceptor() {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
 

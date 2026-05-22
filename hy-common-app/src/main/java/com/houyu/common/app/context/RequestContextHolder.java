@@ -13,7 +13,6 @@ public class RequestContextHolder {
     private static final TransmittableThreadLocal<String> userNameHolder = new TransmittableThreadLocal<>();
     private static final TransmittableThreadLocal<Boolean> retryFlagHolder = new TransmittableThreadLocal<>();
     private static final TransmittableThreadLocal<String> dataScopeSqlHolder = new TransmittableThreadLocal<>();
-    private static final TransmittableThreadLocal<Map<String, String>> requestHeadersHolder = new TransmittableThreadLocal<>();
     private static final TransmittableThreadLocal<Map<String, String>> mdcContextHolder = new TransmittableThreadLocal<>();
 
     public static void setTraceId(String traceId) {
@@ -68,14 +67,6 @@ public class RequestContextHolder {
         return dataScopeSqlHolder.get();
     }
 
-    public static void setRequestHeaders(Map<String, String> headers) {
-        requestHeadersHolder.set(headers);
-    }
-
-    public static Map<String, String> getRequestHeaders() {
-        return requestHeadersHolder.get();
-    }
-
     public static Map<String, String> getMdcContext() {
         return mdcContextHolder.get() != null ? mdcContextHolder.get() : new HashMap<>();
     }
@@ -96,7 +87,6 @@ public class RequestContextHolder {
         userNameHolder.remove();
         retryFlagHolder.remove();
         dataScopeSqlHolder.remove();
-        requestHeadersHolder.remove();
         mdcContextHolder.remove();
     }
 }

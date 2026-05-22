@@ -26,7 +26,7 @@ public class JournalAspect {
         this.journalService = journalService;
     }
 
-    @Around("execution(* com.houyu.*.service..*.save*(..))")
+    @Around("execution(* com.houyu.*.service..*.save*(..)) && !execution(* com.houyu.*.service..*.saveOrUpdate*(..))")
     public Object recordSaveJournal(ProceedingJoinPoint joinPoint) throws Throwable {
         Object result = joinPoint.proceed();
 

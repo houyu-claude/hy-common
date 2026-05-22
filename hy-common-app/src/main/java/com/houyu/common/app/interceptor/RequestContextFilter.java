@@ -1,5 +1,6 @@
 package com.houyu.common.app.interceptor;
 
+import com.houyu.common.app.config.AppProperties;
 import com.houyu.common.app.context.RequestContextHolder;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,8 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.UUID;
 
 @Component
 @Order(Ordered.HIGHEST_PRECEDENCE)
@@ -23,6 +23,12 @@ public class RequestContextFilter implements Filter {
     private static final String USER_NAME_HEADER = "X-User-Name";
     private static final String RETRY_FLAG_HEADER = "X-Retry-Flag";
 
+    private final AppProperties appProperties;
+
+    public RequestContextFilter(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
+
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
             throws IOException, ServletException {
@@ -30,10 +36,17 @@ public class RequestContextFilter implements Filter {
         HttpServletResponse httpResponse = (HttpServletResponse) response;
 
         String traceId = httpRequest.getHeader(TRACE_ID_HEADER);
+        
+        AppProperties.TraceConfig traceConfig = appProperties.getTrace();
+        
         if (traceId == null || traceId.isEmpty()) {
-            httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            httpResponse.getWriter().write("X-Trace-Id is required");
-            return;
+            if (traceConfig.isAutoGenerate()) {
+                traceId = generateTraceId();
+            } else if (traceConfig.isRequired()) {
+                httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
+                httpResponse.getWriter().write("X-Trace-Id is required");
+                return;
+            }
         }
 
         ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(httpRequest);
@@ -46,15 +59,13 @@ public class RequestContextFilter implements Filter {
             RequestContextHolder.setRetryFlag(Boolean.parseBoolean(
                     httpRequest.getHeader(RETRY_FLAG_HEADER)));
 
-            Map<String, String> headers = new HashMap<>();
-            httpRequest.getHeaderNames().asIterator().forEachRemaining(name -> {
-                headers.put(name, httpRequest.getHeader(name));
-            });
-            RequestContextHolder.setRequestHeaders(headers);
-
             chain.doFilter(wrappedRequest, response);
         } finally {
             RequestContextHolder.clear();
         }
+    }
+
+    private String generateTraceId() {
+        return UUID.randomUUID().toString().replace("-", "");
     }
 }

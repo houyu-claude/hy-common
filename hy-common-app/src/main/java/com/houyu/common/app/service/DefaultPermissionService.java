@@ -1,5 +1,10 @@
 package com.houyu.common.app.service;
 
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -20,6 +25,27 @@ import java.util.Set;
  */
 @Deprecated(since = "1.0.0", forRemoval = false)
 public class DefaultPermissionService implements PermissionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(DefaultPermissionService.class);
+
+    @Value("${spring.profiles.active:}")
+    private String activeProfile;
+
+    @PostConstruct
+    public void init() {
+        if (activeProfile != null && !activeProfile.isEmpty()) {
+            boolean isDevProfile = activeProfile.contains("dev") || activeProfile.contains("test") || 
+                                   activeProfile.contains("local");
+            if (!isDevProfile) {
+                logger.warn("============================================");
+                logger.warn("WARNING: DefaultPermissionService is being used in non-development environment!");
+                logger.warn("Profile: {}", activeProfile);
+                logger.warn("This implementation allows all permissions without any checks.");
+                logger.warn("Please provide a real PermissionService implementation for production!");
+                logger.warn("============================================");
+            }
+        }
+    }
 
     @Override
     public boolean hasPermission(String userId, String permission) {

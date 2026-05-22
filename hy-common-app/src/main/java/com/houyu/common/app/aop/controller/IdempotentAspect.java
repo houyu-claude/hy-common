@@ -40,19 +40,15 @@ public class IdempotentAspect {
 
         String key = buildIdempotentKey(requestId, request.getMethod(), request.getRequestURI());
 
-        IdempotentStatus status = idempotentService.getStatus(key);
-
-        if (status == IdempotentStatus.PROCESSING) {
-            throw new IllegalStateException("Request is processing");
-        }
-
-        if (!retryFlag && status == IdempotentStatus.SUCCESS) {
-            throw new IllegalStateException("Duplicate request detected");
-        }
-
         boolean acquired = idempotentService.tryStoreProcessing(key);
         if (!acquired) {
-            throw new IllegalStateException("Request is processing by another thread");
+            IdempotentStatus status = idempotentService.getStatus(key);
+            if (status == IdempotentStatus.PROCESSING) {
+                throw new IllegalStateException("Request is processing");
+            }
+            if (!retryFlag && status == IdempotentStatus.SUCCESS) {
+                throw new IllegalStateException("Duplicate request detected");
+            }
         }
 
         try {

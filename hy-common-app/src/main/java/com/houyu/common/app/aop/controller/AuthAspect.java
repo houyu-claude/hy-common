@@ -2,6 +2,7 @@ package com.houyu.common.app.aop.controller;
 
 import com.houyu.common.app.annotation.RequirePermission;
 import com.houyu.common.app.context.RequestContextHolder;
+import com.houyu.common.app.exception.AccessDeniedException;
 import com.houyu.common.app.service.PermissionService;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
@@ -26,7 +27,7 @@ public class AuthAspect {
         String permission = requirePermission.value();
 
         if (!permissionService.hasPermission(userId, permission)) {
-            throw new SecurityException("Insufficient permission: " + permission);
+            throw new AccessDeniedException("Insufficient permission: " + permission);
         }
 
         String dataScope = permissionService.getDataScope(userId);
