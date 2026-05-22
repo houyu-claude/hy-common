@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final String STATE_ERROR_MESSAGE = "操作冲突，请稍后重试";
+
     private final LogOutputManager logOutputManager;
 
     public GlobalExceptionHandler(LogOutputManager logOutputManager) {
@@ -57,11 +59,42 @@ public class GlobalExceptionHandler {
         Map<String, Object> response = new HashMap<>();
         response.put("success", false);
         response.put("code", "STATE_ERROR");
-        response.put("message", ex.getMessage());
+        response.put("message", STATE_ERROR_MESSAGE);
         response.put("timestamp", LocalDateTime.now().toString());
         response.put("traceId", RequestContextHolder.getTraceId());
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalArgumentException(
+            IllegalArgumentException ex) {
+
+        logException(ex, HttpStatus.BAD_REQUEST.value());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("code", "INVALID_ARGUMENT");
+        response.put("message", "请求参数无效");
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("traceId", RequestContextHolder.getTraceId());
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<Map<String, Object>> handleSecurityException(SecurityException ex) {
+
+        logException(ex, HttpStatus.FORBIDDEN.value());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("code", "ACCESS_DENIED");
+        response.put("message", "权限不足，无法访问");
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("traceId", RequestContextHolder.getTraceId());
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 
     @ExceptionHandler(Exception.class)

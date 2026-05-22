@@ -39,7 +39,8 @@ public class DataPermissionInterceptor implements InnerInterceptor {
                            RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
         String dataScopeSql = RequestContextHolder.getDataScopeSql();
         if (dataScopeSql != null && !dataScopeSql.isEmpty()) {
-            if (validateDataScopeSql(dataScopeSql)) {
+            String validationError = validateDataScopeSql(dataScopeSql);
+            if (validationError == null) {
                 String originalSql = boundSql.getSql();
                 if (originalSql.toUpperCase().contains("SELECT")) {
                     String newSql = appendDataScopeCondition(originalSql, dataScopeSql);
@@ -48,23 +49,32 @@ public class DataPermissionInterceptor implements InnerInterceptor {
                     }
                 }
             } else {
-                logger.warn("Data scope SQL validation failed: {}", dataScopeSql);
+                logger.warn("Data scope SQL validation failed: {}, error: {}", dataScopeSql, validationError);
             }
         }
     }
 
-    private boolean validateDataScopeSql(String dataScopeSql) {
+    private String validateDataScopeSql(String dataScopeSql) {
         Set<String> allowedScopes = permissionService.getDataScopeWhiteList();
+
         if (allowedScopes.isEmpty()) {
-            try {
-                CCJSqlParserUtil.parseCondExpression(dataScopeSql);
-                return true;
-            } catch (JSQLParserException e) {
-                logger.error("Invalid data scope SQL expression: {}", e.getMessage());
-                return false;
-            }
+            logger.error("Data scope white list is empty! Data scope SQL injection protection disabled. " +
+                    "Please provide a non-empty white list in your PermissionService implementation.");
+            return "Data scope white list is empty, data scope SQL is rejected for security reasons";
         }
-        return allowedScopes.contains(dataScopeSql);
+
+        if (!allowedScopes.contains(dataScopeSql)) {
+            logger.error("Data scope SQL '{}' is not in the white list: {}", dataScopeSql, allowedScopes);
+            return "Data scope SQL is not in the allowed white list";
+        }
+
+        try {
+            CCJSqlParserUtil.parseCondExpression(dataScopeSql);
+            return null;
+        } catch (JSQLParserException e) {
+            logger.error("Invalid data scope SQL expression: {}", e.getMessage());
+            return "Invalid SQL expression: " + e.getMessage();
+        }
     }
 
     private String appendDataScopeCondition(String originalSql, String dataScopeSql) {
