@@ -10,11 +10,13 @@ import jakarta.annotation.PostConstruct;
 
 public class IdempotentService {
 
-    private Cache<String, IdempotentStatus> processingCache;
-    private Cache<String, IdempotentStatus> successCache;
+    private Cache<String, String> idempotentCache;
 
     private final CacheManager cacheManager;
     private final AppProperties appProperties;
+
+    private static final String PROCESSING_PREFIX = "P:";
+    private static final String SUCCESS_PREFIX = "S:";
 
     public IdempotentService(CacheManager cacheManager, AppProperties appProperties) {
         this.cacheManager = cacheManager;
@@ -23,19 +25,10 @@ public class IdempotentService {
 
     @PostConstruct
     public void init() {
-        int processingExpire = appProperties.getIdempotent().getProcessingExpireSeconds();
         int successExpire = appProperties.getIdempotent().getSuccessExpireSeconds();
 
-        processingCache = cacheManager.getOrCreateCache(
-                QuickConfig.newBuilder("app:idempotent:processing")
-                        .cacheType(CacheType.REMOTE)
-                        .expire(processingExpire)
-                        .keyConvertor("fastjson2")
-                        .build()
-        );
-
-        successCache = cacheManager.getOrCreateCache(
-                QuickConfig.newBuilder("app:idempotent:success")
+        idempotentCache = cacheManager.getOrCreateCache(
+                QuickConfig.newBuilder("app:idempotent")
                         .cacheType(CacheType.REMOTE)
                         .expire(successExpire)
                         .keyConvertor("fastjson2")
@@ -44,33 +37,39 @@ public class IdempotentService {
     }
 
     public IdempotentStatus getStatus(String key) {
-        IdempotentStatus processing = processingCache.get(key);
-        if (processing != null) {
-            return processing;
+        String value = idempotentCache.get(key);
+        if (value == null) {
+            return null;
         }
-        return successCache.get(key);
+        if (value.startsWith(PROCESSING_PREFIX)) {
+            return IdempotentStatus.PROCESSING;
+        }
+        if (value.startsWith(SUCCESS_PREFIX)) {
+            return IdempotentStatus.SUCCESS;
+        }
+        return null;
     }
 
     public boolean tryStoreProcessing(String key) {
-        IdempotentStatus previous = processingCache.putIfAbsent(key, IdempotentStatus.PROCESSING);
+        int processingExpire = appProperties.getIdempotent().getProcessingExpireSeconds();
+        String processingValue = PROCESSING_PREFIX + System.currentTimeMillis();
+        String previous = idempotentCache.putIfAbsent(key, processingValue, processingExpire);
         return previous == null;
     }
 
     public void store(String key, IdempotentStatus status) {
         if (status == IdempotentStatus.PROCESSING) {
-            processingCache.put(key, status);
+            idempotentCache.put(key, PROCESSING_PREFIX + System.currentTimeMillis());
         } else {
-            successCache.put(key, status);
+            idempotentCache.put(key, SUCCESS_PREFIX + System.currentTimeMillis());
         }
     }
 
     public void storeSuccess(String key) {
-        processingCache.remove(key);
-        successCache.put(key, IdempotentStatus.SUCCESS);
+        idempotentCache.put(key, SUCCESS_PREFIX + System.currentTimeMillis());
     }
 
     public void remove(String key) {
-        processingCache.remove(key);
-        successCache.remove(key);
+        idempotentCache.remove(key);
     }
 }

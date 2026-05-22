@@ -7,6 +7,7 @@ import com.houyu.common.log.output.LogOutputManager;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -18,9 +19,12 @@ import java.time.LocalDateTime;
 public class AuditAspect {
 
     private final LogOutputManager logOutputManager;
+    private final String serviceName;
 
-    public AuditAspect(LogOutputManager logOutputManager) {
+    public AuditAspect(LogOutputManager logOutputManager,
+                      @Value("${spring.application.name:hy-common-app}") String serviceName) {
         this.logOutputManager = logOutputManager;
+        this.serviceName = serviceName;
     }
 
     @Around("@annotation(auditLog)")
@@ -43,7 +47,7 @@ public class AuditAspect {
                     com.houyu.common.log.model.LogLevel.ERROR);
             logEvent.setMessage("Audit log: " + auditLog.description() +
                     (success ? " - success" : " - failed"));
-            logEvent.setServiceName("hy-common-app");
+            logEvent.setServiceName(serviceName);
             logEvent.setMethodName(joinPoint.getSignature().getName());
             logEvent.setClassName(joinPoint.getTarget().getClass().getName());
             logEvent.setUserId(RequestContextHolder.getUserId());

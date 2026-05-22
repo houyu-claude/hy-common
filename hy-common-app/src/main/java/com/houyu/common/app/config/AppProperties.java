@@ -13,7 +13,6 @@ public class AppProperties {
     private PageConfig page = new PageConfig();
     private SecurityConfig security = new SecurityConfig();
     private TraceConfig trace = new TraceConfig();
-    private AopConfig aop = new AopConfig();
 
     @Data
     public static class IdempotentConfig {
@@ -35,12 +34,5 @@ public class AppProperties {
     public static class TraceConfig {
         private boolean required = true;
         private boolean autoGenerate = true;
-    }
-
-    @Data
-    public static class AopConfig {
-        private String controllerPackage = "com.houyu.*.controller";
-        private String servicePackage = "com.houyu.*.service";
-        private String managerPackage = "com.houyu.*.manager";
     }
 }

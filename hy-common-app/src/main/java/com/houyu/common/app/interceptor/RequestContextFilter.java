@@ -43,8 +43,13 @@ public class RequestContextFilter implements Filter {
             if (traceConfig.isAutoGenerate()) {
                 traceId = generateTraceId();
             } else if (traceConfig.isRequired()) {
-                httpResponse.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                httpResponse.getWriter().write("X-Trace-Id is required");
+                httpResponse.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                httpResponse.setContentType("application/json");
+                httpResponse.setCharacterEncoding("UTF-8");
+                String errorJson = String.format(
+                        "{\"success\":false,\"code\":\"TRACE_ID_REQUIRED\",\"message\":\"X-Trace-Id is required\",\"timestamp\":\"%s\"}",
+                        java.time.LocalDateTime.now().toString());
+                httpResponse.getWriter().write(errorJson);
                 return;
             }
         }

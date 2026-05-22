@@ -1,6 +1,7 @@
 package com.houyu.common.app.mybatis;
 
 import com.baomidou.mybatisplus.core.interceptor.InnerInterceptor;
+import com.baomidou.mybatisplus.core.toolkit.PluginUtils;
 import com.houyu.common.app.entity.ShardEntity;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
@@ -8,24 +9,24 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.insert.Insert;
-import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.update.Update;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
-import org.apache.ibatis.reflection.MetaObject;
-import org.apache.ibatis.reflection.SystemMetaObject;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
+import java.util.regex.Pattern;
 
 public class TableShardInterceptor implements InnerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(TableShardInterceptor.class);
+    
+    private static final Pattern TABLE_NAME_PATTERN = Pattern.compile("^[a-zA-Z_][a-zA-Z0-9_]*$");
 
     @Override
     public void beforeQuery(Executor executor, MappedStatement ms, Object parameter,
@@ -35,12 +36,31 @@ public class TableShardInterceptor implements InnerInterceptor {
             String tableNameDest = shardEntity.getTableNameDest();
 
             if (tableNameSrc != null && tableNameDest != null) {
+                validateTableName(tableNameSrc, "source");
+                validateTableName(tableNameDest, "destination");
+                
                 String originalSql = boundSql.getSql();
                 String newSql = replaceTableName(originalSql, tableNameSrc, tableNameDest);
                 if (newSql != null) {
                     setBoundSql(boundSql, newSql);
                 }
             }
+        }
+    }
+
+    private void validateTableName(String tableName, String type) throws SQLException {
+        if (tableName == null || tableName.isEmpty()) {
+            throw new SQLException("Table sharding " + type + " table name cannot be null or empty");
+        }
+        
+        if (!TABLE_NAME_PATTERN.matcher(tableName).matches()) {
+            logger.error("Invalid table name '{}' for table sharding: contains invalid characters", tableName);
+            throw new SQLException("Invalid " + type + " table name: " + tableName);
+        }
+        
+        if (tableName.length() > 64) {
+            logger.error("Table name '{}' exceeds maximum length of 64 characters", tableName);
+            throw new SQLException(type + " table name exceeds maximum length of 64 characters");
         }
     }
 
@@ -87,7 +107,6 @@ public class TableShardInterceptor implements InnerInterceptor {
     }
 
     private void setBoundSql(BoundSql boundSql, String sql) {
-        MetaObject metaObject = SystemMetaObject.forObject(boundSql);
-        metaObject.setValue("sql", sql);
+        PluginUtils.mpBoundSql(boundSql).sql(sql);
     }
 }

@@ -3,6 +3,7 @@ package com.houyu.common.app.aop.controller;
 import com.houyu.common.app.annotation.Idempotent;
 import com.houyu.common.app.context.RequestContextHolder;
 import com.houyu.common.app.enums.IdempotentStatus;
+import com.houyu.common.app.exception.BusinessException;
 import com.houyu.common.app.service.IdempotentService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -28,14 +29,14 @@ public class IdempotentAspect {
     public Object handleIdempotent(ProceedingJoinPoint joinPoint, Idempotent idempotent) throws Throwable {
         HttpServletRequest request = getRequest();
         if (request == null) {
-            throw new IllegalStateException("HttpServletRequest is null, cannot perform idempotent check");
+            throw new BusinessException("REQUEST_CONTEXT_ERROR", "HttpServletRequest is null, cannot perform idempotent check");
         }
 
         String requestId = request.getHeader(REQUEST_ID_HEADER);
         boolean retryFlag = Boolean.parseBoolean(request.getHeader("X-Retry-Flag"));
 
         if (requestId == null || requestId.isEmpty()) {
-            throw new IllegalArgumentException("RequestId is required for idempotent check");
+            throw new BusinessException("REQUEST_ID_REQUIRED", "RequestId is required for idempotent check");
         }
 
         String key = buildIdempotentKey(requestId, request.getMethod(), request.getRequestURI());
@@ -44,10 +45,10 @@ public class IdempotentAspect {
         if (!acquired) {
             IdempotentStatus status = idempotentService.getStatus(key);
             if (status == IdempotentStatus.PROCESSING) {
-                throw new IllegalStateException("Request is processing");
+                throw new BusinessException("REQUEST_PROCESSING", "Request is processing");
             }
             if (!retryFlag && status == IdempotentStatus.SUCCESS) {
-                throw new IllegalStateException("Duplicate request detected");
+                throw new BusinessException("DUPLICATE_REQUEST", "Duplicate request detected");
             }
         }
 

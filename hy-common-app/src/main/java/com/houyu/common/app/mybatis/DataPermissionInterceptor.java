@@ -1,6 +1,7 @@
 package com.houyu.common.app.mybatis;
 
 import com.baomidou.mybatisplus.core.interceptor.InnerInterceptor;
+import com.baomidou.mybatisplus.core.toolkit.PluginUtils;
 import com.houyu.common.app.context.RequestContextHolder;
 import com.houyu.common.app.service.PermissionService;
 import net.sf.jsqlparser.JSQLParserException;
@@ -15,8 +16,6 @@ import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
-import org.apache.ibatis.reflection.MetaObject;
-import org.apache.ibatis.reflection.SystemMetaObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,11 +41,9 @@ public class DataPermissionInterceptor implements InnerInterceptor {
             String validationError = validateDataScopeSql(dataScopeSql);
             if (validationError == null) {
                 String originalSql = boundSql.getSql();
-                if (originalSql.toUpperCase().contains("SELECT")) {
-                    String newSql = appendDataScopeCondition(originalSql, dataScopeSql);
-                    if (newSql != null) {
-                        setBoundSql(boundSql, newSql);
-                    }
+                String newSql = appendDataScopeCondition(originalSql, dataScopeSql);
+                if (newSql != null) {
+                    setBoundSql(boundSql, newSql);
                 }
             } else {
                 logger.warn("Data scope SQL validation failed: {}, error: {}", dataScopeSql, validationError);
@@ -118,8 +115,7 @@ public class DataPermissionInterceptor implements InnerInterceptor {
     }
 
     private void setBoundSql(BoundSql boundSql, String sql) {
-        MetaObject metaObject = SystemMetaObject.forObject(boundSql);
-        metaObject.setValue("sql", sql);
+        PluginUtils.mpBoundSql(boundSql).sql(sql);
     }
 
     @Override

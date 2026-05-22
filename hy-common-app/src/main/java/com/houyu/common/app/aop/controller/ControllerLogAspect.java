@@ -34,6 +34,14 @@ public class ControllerLogAspect {
             "x-user-token", "x-access-token", "x-refresh-token", "password"
     ));
 
+    private static final Set<String> SENSITIVE_FIELDS = new HashSet<>(Arrays.asList(
+            "password", "pwd", "secret", "token", "accessToken", "refreshToken",
+            "apiKey", "secretKey", "credential", "cardNo", "bankCard",
+            "idCard", "idcard", "phone", "mobile", "email"
+    ));
+
+    private static final int MAX_RESPONSE_BODY_LENGTH = 1000;
+
     private final LogOutputManager logOutputManager;
     private final String serviceName;
 
@@ -110,13 +118,16 @@ public class ControllerLogAspect {
             if (result != null || response != null) {
                 HttpResponseInfo httpResponse = new HttpResponseInfo();
                 if (result != null) {
-                    httpResponse.setResponseBody(result.toString());
+                    String responseBody = result.toString();
+                    responseBody = truncateAndMaskSensitive(responseBody);
+                    httpResponse.setResponseBody(responseBody);
                 }
 
                 Map<String, String> responseHeaders = new HashMap<>();
                 if (response != null) {
                     response.getHeaderNames().forEach(name -> {
-                        responseHeaders.put(name, response.getHeader(name));
+                        String value = SENSITIVE_HEADERS.contains(name.toLowerCase()) ? "[REDACTED]" : response.getHeader(name);
+                        responseHeaders.put(name, value);
                     });
                     httpResponse.setHeaders(responseHeaders);
                     httpResponse.setStatusCode(response.getStatus());
@@ -139,10 +150,35 @@ public class ControllerLogAspect {
             if (request instanceof ContentCachingRequestWrapper wrapper) {
                 byte[] body = wrapper.getContentAsByteArray();
                 if (body != null && body.length > 0) {
-                    return new String(body, StandardCharsets.UTF_8);
+                    String bodyStr = new String(body, StandardCharsets.UTF_8);
+                    return truncateAndMaskSensitive(bodyStr);
                 }
             }
         }
         return null;
+    }
+
+    private String truncateAndMaskSensitive(String content) {
+        if (content == null) {
+            return null;
+        }
+        
+        String truncated = content.length() > MAX_RESPONSE_BODY_LENGTH 
+                ? content.substring(0, MAX_RESPONSE_BODY_LENGTH) + "...[TRUNCATED]" 
+                : content;
+
+        String masked = truncated;
+        for (String sensitiveField : SENSITIVE_FIELDS) {
+            masked = masked.replaceAll(
+                    "\"" + sensitiveField + "\"\\s*:\\s*\"[^\"]*\"",
+                    "\"" + sensitiveField + "\": \"[REDACTED]\""
+            );
+            masked = masked.replaceAll(
+                    "'" + sensitiveField + "'\\s*:\\s*'[^']*'",
+                    "'" + sensitiveField + "': '[REDACTED]'"
+            );
+        }
+        
+        return masked;
     }
 }

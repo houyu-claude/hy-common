@@ -2,6 +2,7 @@ package com.houyu.common.app.aop.controller;
 
 import com.houyu.common.app.context.RequestContextHolder;
 import com.houyu.common.app.exception.AccessDeniedException;
+import com.houyu.common.app.exception.BusinessException;
 import com.houyu.common.log.model.HyLogEvent;
 import com.houyu.common.log.output.LogOutputManager;
 import org.springframework.http.HttpStatus;
@@ -87,6 +88,21 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(response);
     }
 
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Map<String, Object>> handleBusinessException(BusinessException ex) {
+
+        logException(ex, HttpStatus.BAD_REQUEST.value());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("success", false);
+        response.put("code", ex.getCode());
+        response.put("message", ex.getMessage());
+        response.put("timestamp", LocalDateTime.now().toString());
+        response.put("traceId", RequestContextHolder.getTraceId());
+
+        return ResponseEntity.badRequest().body(response);
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
 
@@ -144,6 +160,23 @@ public class GlobalExceptionHandler {
         logEvent.setExceptionMessage(ex.getMessage());
         logEvent.setSuccess(false);
 
+        if (statusCode >= 500) {
+            logEvent.setExceptionStackTrace(getStackTrace(ex));
+        }
+
         logOutputManager.output(logEvent);
+    }
+
+    private String getStackTrace(Exception ex) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(ex.getClass().getName()).append(": ").append(ex.getMessage()).append("\n");
+        for (StackTraceElement element : ex.getStackTrace()) {
+            sb.append("\tat ").append(element.toString()).append("\n");
+            if (sb.length() > 2000) {
+                sb.append("\t... (truncated)");
+                break;
+            }
+        }
+        return sb.toString();
     }
 }

@@ -100,13 +100,22 @@ public class JournalAspect {
 
     private BaseEntity findEntityBeforeDelete(ProceedingJoinPoint joinPoint, Object... args) {
         Object target = joinPoint.getTarget();
+        String targetClassName = joinPoint.getTarget().getClass().getName();
+        String methodName = joinPoint.getSignature().getName();
+        
         if (target instanceof JournalSupport journalSupport) {
             if (args.length > 0 && args[0] != null) {
                 return journalSupport.getEntityBeforeDelete(args[0]);
+            } else {
+                logger.warn("Journal audit log may be lost - JournalSupport implemented but args is null or empty. " +
+                        "Target: {}, Method: {}, Args: {}", targetClassName, methodName, 
+                        args.length > 0 ? args[0] : "null");
             }
+        } else {
+            logger.warn("Journal audit log may be lost - Target service does not implement JournalSupport interface. " +
+                    "Target: {}, Method: {}, Args: {}", targetClassName, methodName, 
+                    args.length > 0 ? args[0] : "null");
         }
-        logger.debug("Target service does not implement JournalSupport interface: {}", 
-                joinPoint.getTarget().getClass().getName());
         return null;
     }
 }

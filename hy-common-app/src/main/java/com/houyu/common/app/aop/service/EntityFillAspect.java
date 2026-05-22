@@ -36,6 +36,13 @@ public class EntityFillAspect {
 
     @Before("execution(* com.houyu.*.service..*.saveOrUpdate*(..))")
     public void fillForSaveOrUpdate(JoinPoint joinPoint) {
+        for (Object arg : joinPoint.getArgs()) {
+            if (arg instanceof BaseEntity entity) {
+                OpType opType = entity.getId() == null ? OpType.INSERT : OpType.UPDATE;
+                fillEntity(joinPoint, opType);
+                return;
+            }
+        }
         fillEntity(joinPoint, OpType.INSERT);
     }
 
