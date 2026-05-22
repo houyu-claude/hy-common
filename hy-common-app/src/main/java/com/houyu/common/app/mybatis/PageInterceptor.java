@@ -2,6 +2,7 @@ package com.houyu.common.app.mybatis;
 
 import com.baomidou.mybatisplus.core.interceptor.InnerInterceptor;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.houyu.common.app.config.AppProperties;
 import org.apache.ibatis.executor.Executor;
 import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
@@ -12,15 +13,20 @@ import java.sql.SQLException;
 
 public class PageInterceptor implements InnerInterceptor {
 
-    private static final int MAX_PAGE_SIZE = 5000;
+    private final AppProperties appProperties;
+
+    public PageInterceptor(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
 
     @Override
     public void beforeQuery(Executor executor, MappedStatement ms, Object parameter,
                            RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
         if (parameter instanceof IPage<?> page) {
             long size = page.getSize();
-            if (size > MAX_PAGE_SIZE) {
-                page.setSize(MAX_PAGE_SIZE);
+            int maxSize = appProperties.getPage().getMaxSize();
+            if (size > maxSize) {
+                page.setSize(maxSize);
             }
         }
     }

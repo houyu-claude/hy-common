@@ -1,7 +1,6 @@
 com.houyu.common.app.config.AppAutoConfiguration
 com.houyu.common.app.config.MyBatisPlusConfig
-com.houyu.common.app.interceptor.TraceFilter
-com.houyu.common.app.interceptor.RequestFilter
+com.houyu.common.app.interceptor.RequestContextFilter
 com.houyu.common.app.aop.controller.ControllerLogAspect
 com.houyu.common.app.aop.controller.IdempotentAspect
 com.houyu.common.app.aop.controller.AuthAspect

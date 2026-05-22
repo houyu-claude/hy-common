@@ -1,8 +1,10 @@
 package com.houyu.common.app.config;
 
+import com.houyu.common.app.service.DefaultPermissionService;
 import com.houyu.common.app.service.IdempotentService;
 import com.houyu.common.app.service.JournalService;
 import com.houyu.common.app.service.PermissionService;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -19,11 +21,13 @@ public class AppAutoConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(PermissionService.class)
     public PermissionService permissionService() {
-        return new PermissionService();
+        return new DefaultPermissionService();
     }
 
     @Bean
+    @ConditionalOnMissingBean(JournalService.class)
     public JournalService journalService() {
         return new JournalService();
     }

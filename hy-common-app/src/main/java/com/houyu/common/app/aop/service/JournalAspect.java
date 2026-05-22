@@ -4,12 +4,12 @@ import com.houyu.common.app.context.RequestContextHolder;
 import com.houyu.common.app.entity.BaseEntity;
 import com.houyu.common.app.enums.OpType;
 import com.houyu.common.app.service.JournalService;
+import com.houyu.common.app.service.JournalSupport;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -99,35 +99,14 @@ public class JournalAspect {
     }
 
     private BaseEntity findEntityBeforeDelete(ProceedingJoinPoint joinPoint, Object... args) {
-        try {
-            Object target = joinPoint.getTarget();
-            Class<?> targetClass = target.getClass();
-
-            java.lang.reflect.Field mapperField = null;
-            for (java.lang.reflect.Field field : targetClass.getDeclaredFields()) {
-                if (field.getType().getName().contains("Mapper")) {
-                    mapperField = field;
-                    break;
-                }
+        Object target = joinPoint.getTarget();
+        if (target instanceof JournalSupport journalSupport) {
+            if (args.length > 0 && args[0] != null) {
+                return journalSupport.getEntityBeforeDelete(args[0]);
             }
-
-            if (mapperField != null) {
-                mapperField.setAccessible(true);
-                Object mapper = mapperField.get(target);
-
-                if (args.length > 0 && args[0] != null) {
-                    java.lang.reflect.Method selectByIdMethod = mapper.getClass().getMethod("selectById", Object.class);
-                    Object entity = selectByIdMethod.invoke(mapper, args[0]);
-                    if (entity instanceof BaseEntity) {
-                        return (BaseEntity) entity;
-                    }
-                }
-            }
-        } catch (NoSuchMethodException e) {
-            logger.warn("selectById method not found for mapper in {}", joinPoint.getTarget().getClass().getName());
-        } catch (IllegalAccessException | java.lang.reflect.InvocationTargetException e) {
-            logger.error("Failed to find entity before delete: {}", e.getMessage());
         }
+        logger.debug("Target service does not implement JournalSupport interface: {}", 
+                joinPoint.getTarget().getClass().getName());
         return null;
     }
 }

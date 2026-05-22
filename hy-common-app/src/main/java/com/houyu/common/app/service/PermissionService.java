@@ -1,12 +1,19 @@
 package com.houyu.common.app.service;
 
-public class PermissionService {
+import java.util.Collections;
+import java.util.Set;
 
-    public boolean hasPermission(String userId, String permission) {
-        return true;
+public interface PermissionService {
+
+    boolean hasPermission(String userId, String permission);
+
+    String getDataScope(String userId);
+
+    default Set<String> getPermissionWhiteList() {
+        return Collections.emptySet();
     }
 
-    public String getDataScope(String userId) {
-        return "";
+    default Set<String> getDataScopeWhiteList() {
+        return Collections.emptySet();
     }
 }

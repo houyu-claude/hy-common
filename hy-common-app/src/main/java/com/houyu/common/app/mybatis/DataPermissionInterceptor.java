@@ -2,6 +2,7 @@ package com.houyu.common.app.mybatis;
 
 import com.baomidou.mybatisplus.core.interceptor.InnerInterceptor;
 import com.houyu.common.app.context.RequestContextHolder;
+import com.houyu.common.app.service.PermissionService;
 import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.Statement;
@@ -14,29 +15,56 @@ import org.apache.ibatis.mapping.BoundSql;
 import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
+import org.apache.ibatis.reflection.MetaObject;
+import org.apache.ibatis.reflection.SystemMetaObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.Set;
 
 public class DataPermissionInterceptor implements InnerInterceptor {
 
     private static final Logger logger = LoggerFactory.getLogger(DataPermissionInterceptor.class);
+
+    private final PermissionService permissionService;
+
+    public DataPermissionInterceptor(PermissionService permissionService) {
+        this.permissionService = permissionService;
+    }
 
     @Override
     public void beforeQuery(Executor executor, MappedStatement ms, Object parameter,
                            RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
         String dataScopeSql = RequestContextHolder.getDataScopeSql();
         if (dataScopeSql != null && !dataScopeSql.isEmpty()) {
-            String originalSql = boundSql.getSql();
-            if (originalSql.toUpperCase().contains("SELECT")) {
-                String newSql = appendDataScopeCondition(originalSql, dataScopeSql);
-                if (newSql != null) {
-                    setBoundSql(boundSql, newSql);
+            if (validateDataScopeSql(dataScopeSql)) {
+                String originalSql = boundSql.getSql();
+                if (originalSql.toUpperCase().contains("SELECT")) {
+                    String newSql = appendDataScopeCondition(originalSql, dataScopeSql);
+                    if (newSql != null) {
+                        setBoundSql(boundSql, newSql);
+                    }
                 }
+            } else {
+                logger.warn("Data scope SQL validation failed: {}", dataScopeSql);
             }
         }
+    }
+
+    private boolean validateDataScopeSql(String dataScopeSql) {
+        Set<String> allowedScopes = permissionService.getDataScopeWhiteList();
+        if (allowedScopes.isEmpty()) {
+            try {
+                CCJSqlParserUtil.parseCondExpression(dataScopeSql);
+                return true;
+            } catch (JSQLParserException e) {
+                logger.error("Invalid data scope SQL expression: {}", e.getMessage());
+                return false;
+            }
+        }
+        return allowedScopes.contains(dataScopeSql);
     }
 
     private String appendDataScopeCondition(String originalSql, String dataScopeSql) {
@@ -64,14 +92,14 @@ public class DataPermissionInterceptor implements InnerInterceptor {
     private void appendWhereCondition(PlainSelect plainSelect, String dataScopeSql) {
         try {
             net.sf.jsqlparser.expression.Expression dataScopeExpr = CCJSqlParserUtil.parseCondExpression(dataScopeSql);
-            
+
             if (plainSelect.getWhere() == null) {
                 plainSelect.setWhere(dataScopeExpr);
             } else {
                 net.sf.jsqlparser.expression.Expression existingWhere = plainSelect.getWhere();
-                net.sf.jsqlparser.expression.Expression combined = 
-                    new net.sf.jsqlparser.expression.operators.conditional.AndExpression(
-                        existingWhere, dataScopeExpr);
+                net.sf.jsqlparser.expression.Expression combined =
+                        new net.sf.jsqlparser.expression.operators.conditional.AndExpression(
+                                existingWhere, dataScopeExpr);
                 plainSelect.setWhere(combined);
             }
         } catch (JSQLParserException e) {
@@ -80,13 +108,8 @@ public class DataPermissionInterceptor implements InnerInterceptor {
     }
 
     private void setBoundSql(BoundSql boundSql, String sql) {
-        try {
-            java.lang.reflect.Field sqlField = BoundSql.class.getDeclaredField("sql");
-            sqlField.setAccessible(true);
-            sqlField.set(boundSql, sql);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        MetaObject metaObject = SystemMetaObject.forObject(boundSql);
+        metaObject.setValue("sql", sql);
     }
 
     @Override

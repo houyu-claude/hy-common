@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -28,6 +27,10 @@ public class IdempotentAspect {
     @Around("@annotation(idempotent)")
     public Object handleIdempotent(ProceedingJoinPoint joinPoint, Idempotent idempotent) throws Throwable {
         HttpServletRequest request = getRequest();
+        if (request == null) {
+            throw new IllegalStateException("HttpServletRequest is null, cannot perform idempotent check");
+        }
+
         String requestId = request.getHeader(REQUEST_ID_HEADER);
         boolean retryFlag = Boolean.parseBoolean(request.getHeader("X-Retry-Flag"));
 

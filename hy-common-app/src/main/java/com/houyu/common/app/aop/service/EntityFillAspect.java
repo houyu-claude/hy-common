@@ -1,13 +1,13 @@
 package com.houyu.common.app.aop.service;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.AbstractWrapper;
 import com.houyu.common.app.context.RequestContextHolder;
 import com.houyu.common.app.entity.BaseEntity;
 import com.houyu.common.app.enums.OpType;
 import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
-import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 
@@ -52,8 +52,8 @@ public class EntityFillAspect {
                         fillBaseEntity(entity, traceId, userName, opType);
                     }
                 });
-            } else if (arg instanceof Wrapper<?>) {
-                Object entity = extractEntityFromWrapper(arg);
+            } else if (arg instanceof Wrapper<?> wrapper) {
+                Object entity = extractEntityFromWrapper(wrapper);
                 if (entity instanceof BaseEntity baseEntity) {
                     fillBaseEntity(baseEntity, traceId, userName, opType);
                 }
@@ -77,12 +77,9 @@ public class EntityFillAspect {
     }
 
     private Object extractEntityFromWrapper(Object wrapper) {
-        try {
-            java.lang.reflect.Field entityField = wrapper.getClass().getDeclaredField("entity");
-            entityField.setAccessible(true);
-            return entityField.get(wrapper);
-        } catch (Exception e) {
-            return null;
+        if (wrapper instanceof AbstractWrapper abstractWrapper) {
+            return abstractWrapper.getEntity();
         }
+        return null;
     }
 }

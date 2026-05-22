@@ -17,13 +17,21 @@ import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 @Aspect
 @Component
 @Order(30)
 public class ControllerLogAspect {
+
+    private static final Set<String> SENSITIVE_HEADERS = new HashSet<>(Arrays.asList(
+            "authorization", "authorization-bearer", "x-api-key", "cookie", "set-cookie",
+            "x-user-token", "x-access-token", "x-refresh-token", "password"
+    ));
 
     private final LogOutputManager logOutputManager;
 
@@ -46,7 +54,10 @@ public class ControllerLogAspect {
         Map<String, String> requestHeaders = new HashMap<>();
         if (request != null) {
             request.getHeaderNames().asIterator().forEachRemaining(name -> {
-                requestHeaders.put(name, request.getHeader(name));
+                String value = name != null && SENSITIVE_HEADERS.contains(name.toLowerCase())
+                        ? "[REDACTED]"
+                        : request.getHeader(name);
+                requestHeaders.put(name, value);
             });
         }
 
